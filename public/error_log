@@ -1,0 +1,3 @@
+[14-Feb-2025 23:44:41 UTC] PHP Fatal error:  Carbon\CarbonImmutable cannot use Carbon\Carbon - it is not a trait in /home/globalct/realtor.globalctg1.com/vendor/nesbot/carbon/src/Carbon/CarbonImmutable.php on line 836
+[14-Feb-2025 23:44:41 UTC] PHP Fatal error:  Carbon\CarbonImmutable cannot use Carbon\Carbon - it is not a trait in /home/globalct/realtor.globalctg1.com/vendor/nesbot/carbon/src/Carbon/CarbonImmutable.php on line 836
+[14-Feb-2025 23:44:41 UTC] PHP Fatal error:  Carbon\CarbonImmutable cannot use Carbon\Carbon - it is not a trait in /home/globalct/realtor.globalctg1.com/vendor/nesbot/carbon/src/Carbon/CarbonImmutable.php on line 836

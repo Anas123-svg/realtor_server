@@ -1,0 +1,32 @@
+name: Deploy Server
+
+on:
+  push:
+    branches:
+      - main  
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest  
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4  
+
+      - name: Deploy to realtor.globalctg1.com
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.SERVER_IP }}  
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.CPANEL_SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          script: |
+            # Add the server's SSH key to known_hosts to avoid verification errors
+            mkdir -p ~/.ssh
+            ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+
+            # Navigate to the project directory
+            cd /home/globalct/realtor.globalctg1.com
+
+            # Pull the latest changes from the repository
+            git pull origin main
