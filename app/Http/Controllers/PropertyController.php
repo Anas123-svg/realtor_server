@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Property;
+use App\Models\Project;
 use App\Models\PropertyImage;
 use App\Models\PropertyLocation;
 use Illuminate\Http\Request;
