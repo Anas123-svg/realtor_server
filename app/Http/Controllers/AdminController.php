@@ -11,6 +11,7 @@ use App\Models\SiteViewr;
 
 class AdminController extends Controller
 {
+    //admin panel apis
     public function register(Request $request)
     {
         $validated = $request->validate([
