@@ -7,6 +7,9 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\SiteViewrController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\HeroSectionFeaturedPropertyController;
+
+
 
 Route::get('/properties', [PropertyController::class, 'index']);
 Route::post('/properties', [PropertyController::class, 'store']);
@@ -63,7 +66,12 @@ Route::prefix('projects')->group(function(){
 });
 
 
-
+Route::prefix('hero-property')->group(function () {
+    Route::post('add/{id}', [HeroSectionFeaturedPropertyController::class, 'add']); // add hero property
+    Route::delete('remove/{id}', [HeroSectionFeaturedPropertyController::class, 'remove']); // remove hero property
+    Route::get('index', [HeroSectionFeaturedPropertyController::class, 'index']); // get all hero properties
+    Route::get('list', [PropertyController::class, 'heroAndNonHeroProperties']); // get hero and non hero properties
+});
 
 Route::get('/search/projects', [ProjectController::class, 'search']); //get project by i
 

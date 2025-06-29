@@ -6,9 +6,11 @@ use App\Models\Property;
 use App\Models\Project;
 use App\Models\PropertyImage;
 use App\Models\PropertyLocation;
+use App\Models\HeroSectionFeaturedProperty;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class PropertyController extends Controller
 {
@@ -31,7 +33,7 @@ class PropertyController extends Controller
             "internet" => $property['internet'],
             "condition" => $property['condition'],
             "video" => $property['video'],
-            "price" => (float) $property['price'],
+            "price" => round((float) $property['price'], 2),
             "view" => is_array($property['view']) ? $property['view'] : [$property['view']],
             "outdoor" => is_array($property['outdoor']) ? $property['outdoor'] : [$property['outdoor']],
             "propertyStyle" => is_array($property['propertyStyle']) ? $property['propertyStyle'] : [$property['propertyStyle']],
@@ -68,7 +70,33 @@ class PropertyController extends Controller
             ] : null    
         ];
     }
-    
+    private function transformProjectResponse($project)
+{
+    return [
+        'id' => $project->id,
+        'title' => $project->title,
+        'description' => $project->description,
+        'projectType' => $project->projectType,
+        'price' => round((float) $project->price, 2),
+        'images' => $project->images,
+        'videos' => $project->videos,
+        'address' => $project->address,
+        'longitude' => $project->longitude,
+        'latitude' => $project->latitude,
+        'region' => $project->region,
+        'developerInformation' => $project->developerInformation,
+        'neighborhood' => $project->neighborhood,
+        'communityFeatures' => $project->communityFeatures,
+        'sustainabilityFeatures' => $project->sustainabilityFeatures,
+        'investmentReason' => $project->investmentReason,
+        'amenities' => $project->amenities,
+        'progress' => $project->progress,
+        'investmentPotential' => $project->investmentPotential,
+        'FAQ' => $project->FAQ,
+        'delivery_time' => $project->delivery_time,
+    ];
+}
+
     public function index()
     {
         $properties = Property::with(['images', 'location'])->get();
@@ -323,6 +351,26 @@ class PropertyController extends Controller
             }
         }
 
+        //project properties 
+        if ($request->query('project') === 'true') {
+            $propertyIds = Project::pluck('properties')
+                ->flatten()
+                ->unique()
+                ->filter()
+                ->values();
+        
+            $properties = Property::with(['images', 'location', 'admin'])
+                ->whereIn('id', $propertyIds)
+                ->get();
+        
+            return response()->json([
+                'data' => $properties->map(function ($property) {
+                    return $this->transformPropertyResponse($property);
+                }),
+            ]);
+        }
+        
+
         //bathrooms filter
 
 
@@ -493,15 +541,16 @@ public function getFilteredProperties()
         ->get();
     
 
-    $newSaleProperties = Property::with(['images', 'location'])
+    $saleProperties = Property::with(['images', 'location'])
         ->where('dealType', 'sale')
-        ->where('condition', 'new')
         ->orderByDesc('views') 
         ->take(12)
         ->get();
-    $newDevelopments = Project::orderByDesc('created_at')
+        $newDevelopments = Project::orderByDesc('created_at')
         ->take(12)
-        ->get();
+        ->get()
+        ->map(fn($project) => $this->transformProjectResponse($project));
+    
     $usedSaleProperties = Property::with(['images', 'location'])
         ->where('dealType', 'sale')
         ->where('condition', 'used')
@@ -510,33 +559,69 @@ public function getFilteredProperties()
         ->get();
     $mostViewedProperties = $mostViewedProperties->map(fn($property) => $this->transformPropertyResponse($property));
     $rentProperties = $rentProperties->map(fn($property) => $this->transformPropertyResponse($property));
-    $newSaleProperties = $newSaleProperties->map(fn($property) => $this->transformPropertyResponse($property));
+    $saleProperties = $saleProperties->map(fn($property) => $this->transformPropertyResponse($property));
     $usedSaleProperties = $usedSaleProperties->map(fn($property) => $this->transformPropertyResponse($property));
 
     return response()->json([
         'mostViewed' => $mostViewedProperties, // most viewed properties
         'rent' => $rentProperties, // rent properties
-        'newSale' => $newSaleProperties, // new for sale properties
-        'usedSale' => $usedSaleProperties, // used for sale properties
+        'saleProperties' => $saleProperties , // new for sale properties
+   //     'usedSale' => $usedSaleProperties, // used for sale properties
         'newDevelopments' => $newDevelopments, 
 
     ]);
 }
 
 
-public function heroSection() {
-    $properties = Property::with(['images', 'location'])
-        ->orderByDesc('price')
-        ->take(15) 
+public function heroSection()
+{
+    $MAX_HERO_PROPERTIES = 12;
+
+    $featuredPropertyIds = HeroSectionFeaturedProperty::pluck('property_id')->toArray();
+
+    $heroProperties = Property::with(['images', 'location', 'admin'])
+        ->whereIn('id', $featuredPropertyIds)
         ->get();
 
-    $properties = $properties->map(function ($property) {
-        return $this->transformPropertyResponse($property);
-    });
+    $heroCount = $heroProperties->count();
 
-    return response()->json($properties);
+    if ($heroCount < $MAX_HERO_PROPERTIES) {
+        $remainingCount = $MAX_HERO_PROPERTIES - $heroCount;
+
+        $nonHeroProperties = Property::with(['images', 'location', 'admin'])
+            ->whereNotIn('id', $featuredPropertyIds)
+            ->orderByDesc('views')       
+            ->orderByDesc('price')       
+            ->orderByDesc('created_at')  
+            ->take($remainingCount)
+            ->get();
+
+        $finalProperties = $heroProperties->merge($nonHeroProperties);
+    } else {
+        $finalProperties = $heroProperties->take($MAX_HERO_PROPERTIES);
+    }
+
+    $finalProperties = $finalProperties->map(fn($property) => $this->transformPropertyResponse($property));
+
+    return response()->json($finalProperties);
 }
+public function heroAndNonHeroProperties()
+{
+    $featuredPropertyIds = HeroSectionFeaturedProperty::pluck('property_id')->toArray();
 
+    $heroProperties = Property::with(['images', 'location', 'admin'])
+        ->whereIn('id', $featuredPropertyIds)
+        ->get();
 
+    $nonHeroProperties = Property::with(['images', 'location', 'admin'])
+        ->whereNotIn('id', $featuredPropertyIds)
+        ->get();
+    $heroProperties = $heroProperties->map(fn($property) => $this->transformPropertyResponse($property));
+    $nonHeroProperties = $nonHeroProperties->map(fn($property) => $this->transformPropertyResponse($property));
 
+    return response()->json([
+        'heroProperties' => $heroProperties,
+        'nonHeroProperties' => $nonHeroProperties,
+    ]);
+}
 }
