@@ -3,7 +3,7 @@ name: Deploy Server
 on:
   push:
     branches:
-      - main  
+      - master  
 
 jobs:
   deploy:
@@ -20,6 +20,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.CPANEL_SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          port: 21098
           script: |
             # Add the server's SSH key to known_hosts to avoid verification errors
             mkdir -p ~/.ssh
@@ -29,4 +30,4 @@ jobs:
             cd /home/xoftkfnz/realtor.xoftics.com
 
             # Pull the latest changes from the repository
-            git pull origin main
+            git pull origin master
