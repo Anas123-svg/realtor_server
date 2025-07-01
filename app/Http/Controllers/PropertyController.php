@@ -126,6 +126,7 @@ class PropertyController extends Controller
             'location.latitude' => 'nullable|numeric',
             'location.region' => 'nullable|string|max:255',
             'propertyStatus' => 'nullable|string|max:255',
+            'neighborhood' => 'nullable|string|max:255',
             'video' => 'nullable|string'
 
         ]);
@@ -195,6 +196,7 @@ class PropertyController extends Controller
             'price' => 'nullable|numeric|min:0',
             'images' => 'nullable|array',
             'images.*' => 'string',
+            'neighborhood' => 'nullable|string',
             'location.longitude' => 'nullable|numeric',
             'location.latitude' => 'nullable|numeric',
             'location.region' => 'nullable|string|max:255',

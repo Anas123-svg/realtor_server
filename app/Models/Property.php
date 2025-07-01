@@ -42,7 +42,7 @@ class Property extends Model
         'nearbyInfrastructure',
         'propertyStatus',
         'adminId',
-
+        'neighborhood'
     ];
 
     protected $casts = [
