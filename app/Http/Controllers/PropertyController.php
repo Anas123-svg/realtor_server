@@ -33,6 +33,7 @@ class PropertyController extends Controller
             "internet" => $property['internet'],
             "condition" => $property['condition'],
             "video" => $property['video'],
+            'neighborhood' => $property->neighborhood,
             "price" => round((float) $property['price'], 2),
             "view" => is_array($property['view']) ? $property['view'] : [$property['view']],
             "outdoor" => is_array($property['outdoor']) ? $property['outdoor'] : [$property['outdoor']],
