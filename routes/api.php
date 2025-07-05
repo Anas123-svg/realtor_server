@@ -62,6 +62,7 @@ Route::prefix('projects')->group(function(){
     Route::put('/{id}', [ProjectController::class, 'update']); //update project
     Route::delete('/{id}', [ProjectController::class, 'destroy']); //delete project
     Route::get('/{id}', [ProjectController::class, 'show']); //get project by id
+    Route::get('/search/properties', [ProjectController::class, 'searchProjectProperties']);
 
 });
 
