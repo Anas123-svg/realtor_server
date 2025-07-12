@@ -11,12 +11,15 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class PropertyController extends Controller
 {
-    function transformPropertyResponse($property) {
+    function transformPropertyResponse($property)
+    {
         return [
             "id" => $property['id'],
+            "reference_no" => $property['reference_no'],
             "title" => $property['title'],
             "description" => $property['description'],
             "bedrooms" => $property['bedrooms'],
@@ -68,47 +71,47 @@ class PropertyController extends Controller
                 "profile_image" => $property->admin->profile_image,
                 "created_at" => $property->admin->created_at,
                 "updated_at" => $property->admin->updated_at
-            ] : null    
+            ] : null
         ];
     }
     private function transformProjectResponse($project)
-{
-    return [
-        'id' => $project->id,
-        'title' => $project->title,
-        'description' => $project->description,
-        'projectType' => $project->projectType,
-        'price' => round((float) $project->price, 2),
-        'images' => $project->images,
-        'videos' => $project->videos,
-        'address' => $project->address,
-        'longitude' => $project->longitude,
-        'latitude' => $project->latitude,
-        'region' => $project->region,
-        'developerInformation' => $project->developerInformation,
-        'neighborhood' => $project->neighborhood,
-        'communityFeatures' => $project->communityFeatures,
-        'sustainabilityFeatures' => $project->sustainabilityFeatures,
-        'investmentReason' => $project->investmentReason,
-        'amenities' => $project->amenities,
-        'progress' => $project->progress,
-        'investmentPotential' => $project->investmentPotential,
-        'FAQ' => $project->FAQ,
-        'delivery_time' => $project->delivery_time,
-    ];
-}
+    {
+        return [
+            'id' => $project->id,
+            'title' => $project->title,
+            'description' => $project->description,
+            'projectType' => $project->projectType,
+            'price' => round((float) $project->price, 2),
+            'images' => $project->images,
+            'videos' => $project->videos,
+            'address' => $project->address,
+            'longitude' => $project->longitude,
+            'latitude' => $project->latitude,
+            'region' => $project->region,
+            'developerInformation' => $project->developerInformation,
+            'neighborhood' => $project->neighborhood,
+            'communityFeatures' => $project->communityFeatures,
+            'sustainabilityFeatures' => $project->sustainabilityFeatures,
+            'investmentReason' => $project->investmentReason,
+            'amenities' => $project->amenities,
+            'progress' => $project->progress,
+            'investmentPotential' => $project->investmentPotential,
+            'FAQ' => $project->FAQ,
+            'delivery_time' => $project->delivery_time,
+        ];
+    }
 
     public function index()
     {
         $properties = Property::with(['images', 'location'])->get();
-    
+
         $properties = $properties->map(function ($property) {
             return $this->transformPropertyResponse($property);
         });
-    
+
         return response()->json($properties);
     }
-    
+
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -135,9 +138,15 @@ class PropertyController extends Controller
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
-        
+        $reference = 'PROP-' . strtoupper(Str::random(8));
+        while (Property::where('reference_no', $reference)->exists()) {
+            $reference = 'PROP-' . strtoupper(Str::random(8));
+        }
+        $data = $request->except(['images', 'location']);
+        $data['reference_no'] = $reference;
 
-        $property = Property::create($request->except(['images', 'location']));
+        $property = Property::create($data);
+
 
         if ($request->has('images')) {
             foreach ($request->images as $image) {
@@ -158,30 +167,30 @@ class PropertyController extends Controller
     public function show($id)
     {
         $property = Property::with(['images', 'location', 'admin'])->findOrFail($id);
-        
+
         $property = $this->transformPropertyResponse($property);
-        
+
         $dealType = $property['dealType'];
         $condition = $property['condition'];
-    
+
         $similarProperties = Property::with(['images', 'location', 'admin'])
             ->where('dealType', $dealType)
             ->where('condition', $condition)
             ->where('id', '!=', $id)
             ->limit(9)
             ->get();
-    
+
         $similarProperties = $similarProperties->map(function ($item) {
             return $this->transformPropertyResponse($item);
         });
-    
+
         return response()->json([
             'property' => $property,
             'similarProperties' => $similarProperties
         ]);
     }
-    
-    
+
+
 
     public function update(Request $request, $id)
     {
@@ -242,12 +251,12 @@ class PropertyController extends Controller
     public function search(Request $request)
     {
         $query = Property::with(['images', 'location']);
-        
+
         $latitude = $request->query('latitude');
         $longitude = $request->query('longitude');
         $radiusInMiles = $request->query('radius', 10);
         $radiusInMeters = $radiusInMiles * 1609.34;
-    
+
         if (!empty($latitude) && !empty($longitude)) {
             // Apply a proximity-based filter using ST_Distance_Sphere if latitude and longitude are provided
             $query->whereHas('location', function ($subQuery) use ($latitude, $longitude, $radiusInMeters) {
@@ -258,8 +267,8 @@ class PropertyController extends Controller
                     ) <= ?", [$longitude, $latitude, $radiusInMeters]);
             });
         }
-    
-    
+
+
         $filters = [
             'views' => 'view',
             'dealType' => 'dealType',
@@ -267,7 +276,7 @@ class PropertyController extends Controller
             'propertyStyle' => 'propertyStyle',
             //'leaseTerm' => 'leaseTerm',
             //'floors' => 'floors',
-           // 'noiseLevel' => 'noiseLevel',
+            // 'noiseLevel' => 'noiseLevel',
             //'laundry' => 'laundry',
             'amenities' => 'amenities',
             'internet' => 'internet',
@@ -281,7 +290,7 @@ class PropertyController extends Controller
         //propertyType filter
         /*if ($request->has('propertyType')) {
             $propertyTypes = json_decode($request->query('propertyType'), true);
-    
+
             if (is_array($propertyTypes) && count($propertyTypes) > 0) {
                 $query->where(function ($subQuery) use ($propertyTypes) {
                     foreach ($propertyTypes as $type) {
@@ -294,7 +303,7 @@ class PropertyController extends Controller
         //propertyType filter
         if ($request->has('propertyType')) {
             $propertyType = $request->query('propertyType');
-        
+
             if (!empty($propertyType)) {
                 $query->where('propertyType', '=', $propertyType);
             }
@@ -302,24 +311,24 @@ class PropertyController extends Controller
         //dealType filter
         if ($request->has('dealType')) {
             $dealType = $request->query('dealType');
-        
+
             if (!empty($dealType)) {
                 if ($dealType === 'Rental') {
                     $query->where(function ($subQuery) {
                         $subQuery->where('dealType', 'Rental')
-                                 ->orWhere('dealType', 'Residential Rental')
-                                 ->orWhere('dealType', 'Tourist Rental');
+                            ->orWhere('dealType', 'Residential Rental')
+                            ->orWhere('dealType', 'Tourist Rental');
                     });
                 } else {
                     $query->where('dealType', '=', $dealType);
                 }
             }
         }
-        
+
         //propertyStatus filter
         if ($request->has('propertyStatus')) {
             $dealType = $request->query('propertyStatus');
-        
+
             if (!empty($dealType)) {
                 $query->where('propertyStatus', '=', $dealType);
             }
@@ -327,7 +336,7 @@ class PropertyController extends Controller
         //condition filter 
         if ($request->has('condition')) {
             $condition = $request->query('condition');
-        
+
             if (!empty($condition)) {
                 $query->where('condition', '=', $condition);
             }
@@ -337,7 +346,7 @@ class PropertyController extends Controller
         if ($request->has('beds')) {
             $bedsFilter = json_decode($request->query('beds'), true);
             \Log::info('Beds Filter Input:', ['beds' => $bedsFilter]);
-    
+
             if (is_array($bedsFilter) && count($bedsFilter) > 0) {
                 $query->where(function ($subQuery) use ($bedsFilter) {
                     foreach ($bedsFilter as $bed) {
@@ -361,18 +370,18 @@ class PropertyController extends Controller
                 ->unique()
                 ->filter()
                 ->values();
-        
+
             $properties = Property::with(['images', 'location', 'admin'])
                 ->whereIn('id', $propertyIds)
                 ->get();
-        
+
             return response()->json([
                 'data' => $properties->map(function ($property) {
                     return $this->transformPropertyResponse($property);
                 }),
             ]);
         }
-        
+
 
         //bathrooms filter
 
@@ -380,7 +389,7 @@ class PropertyController extends Controller
         if ($request->has('baths')) {
             $bathsFilter = json_decode($request->query('baths'), true);
             \Log::info('baths Filter Input:', ['baths' => $bathsFilter]);
-    
+
             if (is_array($bathsFilter) && count($bathsFilter) > 0) {
                 $query->where(function ($subQuery) use ($bathsFilter) {
                     foreach ($bathsFilter as $bath) {
@@ -396,91 +405,91 @@ class PropertyController extends Controller
                 });
             }
         }
-    //leaseTerm filter
+        //leaseTerm filter
 
-    if ($request->has('leaseTerm')) {
-        $leaseTerm = json_decode($request->query('leaseTerm'), true);
+        if ($request->has('leaseTerm')) {
+            $leaseTerm = json_decode($request->query('leaseTerm'), true);
 
-        if (is_array($leaseTerm) && count($leaseTerm) > 0) {
-            $query->where(function ($subQuery) use ($leaseTerm) {
-                foreach ($leaseTerm as $lease) {
-                    $subQuery->orWhere('leaseTerm', 'LIKE', '%' . $lease . '%');
-                }
-            });
-        }
-    }
-
-    //floors filter
-
-    if ($request->has('floors')) {
-        $floorsFilter = json_decode($request->query('floors'), true);
-        \Log::info('floors Filter Input:', ['floors' => $floorsFilter]);
-
-        if (is_array($floorsFilter) && count($floorsFilter) > 0) {
-            $query->where(function ($subQuery) use ($floorsFilter) {
-                foreach ($floorsFilter as $floor) {
-                    if (str_ends_with($floor, '+')) {
-                        $floorCount = (int) rtrim($floor, '+');
-                        \Log::info('floors Filter Greater Than or Equal:', ['floorCount' => $floorCount]);
-                        $subQuery->orWhere('floors', '>=', $floorCount);
-                    } elseif (is_numeric($floor)) {
-                        \Log::info('floors Filter Exact Match:', ['floorCount' => $floor]);
-                        $subQuery->orWhere('floors', '=', (int) $floor);
+            if (is_array($leaseTerm) && count($leaseTerm) > 0) {
+                $query->where(function ($subQuery) use ($leaseTerm) {
+                    foreach ($leaseTerm as $lease) {
+                        $subQuery->orWhere('leaseTerm', 'LIKE', '%' . $lease . '%');
                     }
-                }
-            });
+                });
+            }
         }
-    }
 
-    //noise level filter
+        //floors filter
 
-    if ($request->has('noiseLevel')) {
-        $noiseLevel = json_decode($request->query('noiseLevel'), true);
+        if ($request->has('floors')) {
+            $floorsFilter = json_decode($request->query('floors'), true);
+            \Log::info('floors Filter Input:', ['floors' => $floorsFilter]);
 
-        if (is_array($noiseLevel) && count($noiseLevel) > 0) {
-            $query->where(function ($subQuery) use ($noiseLevel) {
-                foreach ($noiseLevel as $type) {
-                    $subQuery->orWhere('noiseLevel', 'LIKE', '%' . $type . '%');
-                }
-            });
+            if (is_array($floorsFilter) && count($floorsFilter) > 0) {
+                $query->where(function ($subQuery) use ($floorsFilter) {
+                    foreach ($floorsFilter as $floor) {
+                        if (str_ends_with($floor, '+')) {
+                            $floorCount = (int) rtrim($floor, '+');
+                            \Log::info('floors Filter Greater Than or Equal:', ['floorCount' => $floorCount]);
+                            $subQuery->orWhere('floors', '>=', $floorCount);
+                        } elseif (is_numeric($floor)) {
+                            \Log::info('floors Filter Exact Match:', ['floorCount' => $floor]);
+                            $subQuery->orWhere('floors', '=', (int) $floor);
+                        }
+                    }
+                });
+            }
         }
-    }
 
+        //noise level filter
 
-    //laundry filter
+        if ($request->has('noiseLevel')) {
+            $noiseLevel = json_decode($request->query('noiseLevel'), true);
 
-    if ($request->has('laundry')) {
-        $laundry = json_decode($request->query('laundry'), true);
-
-        if (is_array($laundry) && count($laundry) > 0) {
-            $query->where(function ($subQuery) use ($laundry) {
-                foreach ($laundry as $type) {
-                    $subQuery->orWhere('laundry', 'LIKE', '%' . $type . '%');
-                }
-            });
+            if (is_array($noiseLevel) && count($noiseLevel) > 0) {
+                $query->where(function ($subQuery) use ($noiseLevel) {
+                    foreach ($noiseLevel as $type) {
+                        $subQuery->orWhere('noiseLevel', 'LIKE', '%' . $type . '%');
+                    }
+                });
+            }
         }
-    }
 
-    //internet filter
 
-    if ($request->has('internet')) {
-        $internet = json_decode($request->query('internet'), true);
+        //laundry filter
 
-        if (is_array($internet) && count($internet) > 0) {
-            $query->where(function ($subQuery) use ($internet) {
-                foreach ($internet as $type) {
-                    $subQuery->orWhere('internet', 'LIKE', '%' . $type . '%');
-                }
-            });
+        if ($request->has('laundry')) {
+            $laundry = json_decode($request->query('laundry'), true);
+
+            if (is_array($laundry) && count($laundry) > 0) {
+                $query->where(function ($subQuery) use ($laundry) {
+                    foreach ($laundry as $type) {
+                        $subQuery->orWhere('laundry', 'LIKE', '%' . $type . '%');
+                    }
+                });
+            }
         }
-    }
 
-    //General filters
-                    
+        //internet filter
+
+        if ($request->has('internet')) {
+            $internet = json_decode($request->query('internet'), true);
+
+            if (is_array($internet) && count($internet) > 0) {
+                $query->where(function ($subQuery) use ($internet) {
+                    foreach ($internet as $type) {
+                        $subQuery->orWhere('internet', 'LIKE', '%' . $type . '%');
+                    }
+                });
+            }
+        }
+
+        //General filters
+
         foreach ($filters as $param => $column) {
             if ($request->has($param)) {
                 $values = json_decode($request->query($param), true);
-    
+
                 if (is_array($values) && count($values) > 0) {
                     $query->where(function ($subQuery) use ($column, $values) {
                         foreach ($values as $value) {
@@ -492,20 +501,20 @@ class PropertyController extends Controller
         }
 
 
-    
+
         $minPrice = $request->query('minPrice', 0);
         $maxPrice = $request->query('maxPrice', PHP_INT_MAX);
         \Log::info('Price Filter Input:', ['minPrice' => $minPrice, 'maxPrice' => $maxPrice]);
-        $query->whereBetween('price', [(float)$minPrice, (float)$maxPrice]);
-    
+        $query->whereBetween('price', [(float) $minPrice, (float) $maxPrice]);
+
         $fields = $request->query('fields', '*');
         $fieldsArray = $fields === '*' ? ['*'] : explode(',', $fields);
         $query->select($fieldsArray);
-    
+
         \Log::info('Constructed Query:', [$query->toSql(), $query->getBindings()]);
-    
+
         $properties = $query->get();
-    
+
         return response()->json([
             'data' => $properties->map(function ($property) {
                 return $this->transformPropertyResponse($property);
@@ -514,117 +523,117 @@ class PropertyController extends Controller
     }
 
     public function incrementViews($id)
-{
-    $property = Property::findOrFail($id);
-    $property->increment('views');
-    
-    return response()->json(['message' => 'Views incremented successfully.', 'views' => $property->views]);
-}
+    {
+        $property = Property::findOrFail($id);
+        $property->increment('views');
 
-public function incrementLikes($id)
-{
-    $property = Property::findOrFail($id);
-    $property->increment('likes');
-    
-    return response()->json(['message' => 'Likes incremented successfully.', 'likes' => $property->likes]);
-}
+        return response()->json(['message' => 'Views incremented successfully.', 'views' => $property->views]);
+    }
+
+    public function incrementLikes($id)
+    {
+        $property = Property::findOrFail($id);
+        $property->increment('likes');
+
+        return response()->json(['message' => 'Likes incremented successfully.', 'likes' => $property->likes]);
+    }
 
 
-public function getFilteredProperties()
-{
-    $mostViewedProperties = Property::with(['images', 'location'])
-        ->orderByDesc('views')
-        ->take(12)
-        ->get();
+    public function getFilteredProperties()
+    {
+        $mostViewedProperties = Property::with(['images', 'location'])
+            ->orderByDesc('views')
+            ->take(12)
+            ->get();
 
         $rentProperties = Property::with(['images', 'location'])
-        ->whereIn('dealType', ['Residential rental', 'rental', 'tourist rental']) 
-        ->orderByDesc('views') 
-        ->take(12) 
-        ->get();
-    
+            ->whereIn('dealType', ['Residential rental', 'rental', 'tourist rental'])
+            ->orderByDesc('views')
+            ->take(12)
+            ->get();
 
-    $saleProperties = Property::with(['images', 'location'])
-        ->where('dealType', 'sale')
-        ->orderByDesc('views') 
-        ->take(12)
-        ->get();
+
+        $saleProperties = Property::with(['images', 'location'])
+            ->where('dealType', 'sale')
+            ->orderByDesc('views')
+            ->take(12)
+            ->get();
         $newDevelopments = Project::orderByDesc('created_at')
-        ->take(12)
-        ->get()
-        ->map(fn($project) => $this->transformProjectResponse($project));
-    
-    $usedSaleProperties = Property::with(['images', 'location'])
-        ->where('dealType', 'sale')
-        ->where('condition', 'used')
-        ->orderByDesc('views')
-        ->take(12)
-        ->get();
-    $mostViewedProperties = $mostViewedProperties->map(fn($property) => $this->transformPropertyResponse($property));
-    $rentProperties = $rentProperties->map(fn($property) => $this->transformPropertyResponse($property));
-    $saleProperties = $saleProperties->map(fn($property) => $this->transformPropertyResponse($property));
-    $usedSaleProperties = $usedSaleProperties->map(fn($property) => $this->transformPropertyResponse($property));
+            ->take(12)
+            ->get()
+            ->map(fn($project) => $this->transformProjectResponse($project));
 
-    return response()->json([
-        'mostViewed' => $mostViewedProperties, // most viewed properties
-        'rent' => $rentProperties, // rent properties
-        'saleProperties' => $saleProperties , // new for sale properties
-   //     'usedSale' => $usedSaleProperties, // used for sale properties
-        'newDevelopments' => $newDevelopments, 
+        $usedSaleProperties = Property::with(['images', 'location'])
+            ->where('dealType', 'sale')
+            ->where('condition', 'used')
+            ->orderByDesc('views')
+            ->take(12)
+            ->get();
+        $mostViewedProperties = $mostViewedProperties->map(fn($property) => $this->transformPropertyResponse($property));
+        $rentProperties = $rentProperties->map(fn($property) => $this->transformPropertyResponse($property));
+        $saleProperties = $saleProperties->map(fn($property) => $this->transformPropertyResponse($property));
+        $usedSaleProperties = $usedSaleProperties->map(fn($property) => $this->transformPropertyResponse($property));
 
-    ]);
-}
+        return response()->json([
+            'mostViewed' => $mostViewedProperties, // most viewed properties
+            'rent' => $rentProperties, // rent properties
+            'saleProperties' => $saleProperties, // new for sale properties
+            //     'usedSale' => $usedSaleProperties, // used for sale properties
+            'newDevelopments' => $newDevelopments,
+
+        ]);
+    }
 
 
-public function heroSection()
-{
-    $MAX_HERO_PROPERTIES = 12;
+    public function heroSection()
+    {
+        $MAX_HERO_PROPERTIES = 12;
 
-    $featuredPropertyIds = HeroSectionFeaturedProperty::pluck('property_id')->toArray();
+        $featuredPropertyIds = HeroSectionFeaturedProperty::pluck('property_id')->toArray();
 
-    $heroProperties = Property::with(['images', 'location', 'admin'])
-        ->whereIn('id', $featuredPropertyIds)
-        ->get();
+        $heroProperties = Property::with(['images', 'location', 'admin'])
+            ->whereIn('id', $featuredPropertyIds)
+            ->get();
 
-    $heroCount = $heroProperties->count();
+        $heroCount = $heroProperties->count();
 
-    if ($heroCount < $MAX_HERO_PROPERTIES) {
-        $remainingCount = $MAX_HERO_PROPERTIES - $heroCount;
+        if ($heroCount < $MAX_HERO_PROPERTIES) {
+            $remainingCount = $MAX_HERO_PROPERTIES - $heroCount;
+
+            $nonHeroProperties = Property::with(['images', 'location', 'admin'])
+                ->whereNotIn('id', $featuredPropertyIds)
+                ->orderByDesc('views')
+                ->orderByDesc('price')
+                ->orderByDesc('created_at')
+                ->take($remainingCount)
+                ->get();
+
+            $finalProperties = $heroProperties->merge($nonHeroProperties);
+        } else {
+            $finalProperties = $heroProperties->take($MAX_HERO_PROPERTIES);
+        }
+
+        $finalProperties = $finalProperties->map(fn($property) => $this->transformPropertyResponse($property));
+
+        return response()->json($finalProperties);
+    }
+    public function heroAndNonHeroProperties()
+    {
+        $featuredPropertyIds = HeroSectionFeaturedProperty::pluck('property_id')->toArray();
+
+        $heroProperties = Property::with(['images', 'location', 'admin'])
+            ->whereIn('id', $featuredPropertyIds)
+            ->get();
 
         $nonHeroProperties = Property::with(['images', 'location', 'admin'])
             ->whereNotIn('id', $featuredPropertyIds)
-            ->orderByDesc('views')       
-            ->orderByDesc('price')       
-            ->orderByDesc('created_at')  
-            ->take($remainingCount)
             ->get();
+        $heroProperties = $heroProperties->map(fn($property) => $this->transformPropertyResponse($property));
+        $nonHeroProperties = $nonHeroProperties->map(fn($property) => $this->transformPropertyResponse($property));
 
-        $finalProperties = $heroProperties->merge($nonHeroProperties);
-    } else {
-        $finalProperties = $heroProperties->take($MAX_HERO_PROPERTIES);
+        return response()->json([
+            'heroProperties' => $heroProperties,
+            'nonHeroProperties' => $nonHeroProperties,
+        ]);
     }
-
-    $finalProperties = $finalProperties->map(fn($property) => $this->transformPropertyResponse($property));
-
-    return response()->json($finalProperties);
-}
-public function heroAndNonHeroProperties()
-{
-    $featuredPropertyIds = HeroSectionFeaturedProperty::pluck('property_id')->toArray();
-
-    $heroProperties = Property::with(['images', 'location', 'admin'])
-        ->whereIn('id', $featuredPropertyIds)
-        ->get();
-
-    $nonHeroProperties = Property::with(['images', 'location', 'admin'])
-        ->whereNotIn('id', $featuredPropertyIds)
-        ->get();
-    $heroProperties = $heroProperties->map(fn($property) => $this->transformPropertyResponse($property));
-    $nonHeroProperties = $nonHeroProperties->map(fn($property) => $this->transformPropertyResponse($property));
-
-    return response()->json([
-        'heroProperties' => $heroProperties,
-        'nonHeroProperties' => $nonHeroProperties,
-    ]);
-}
 }

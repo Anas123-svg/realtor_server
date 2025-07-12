@@ -92,6 +92,7 @@ public function show($id)
                 'description' => $property->description,
                 'bedrooms' => $property->bedrooms,
                 'bathrooms' => $property->bathrooms,
+                "reference_no" => $property->reference_no,
                 'area' => $property->area,
                 'propertyType' => $property->propertyType,
                 'category' => $property->category,
@@ -230,6 +231,7 @@ private function transformProperty($property)
 {
     return [
         'id' => $property->id,
+        'reference_no' => $property->reference_no,
         'title' => $property->title,
         'description' => $property->description,
         'bedrooms' => $property->bedrooms,
