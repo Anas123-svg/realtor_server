@@ -512,6 +512,14 @@ class PropertyController extends Controller
         $query->select($fieldsArray);
 
         \Log::info('Constructed Query:', [$query->toSql(), $query->getBindings()]);
+        $sortBy = $request->query('sortBy');
+        if ($sortBy === 'lowestprice') {
+            $query->orderBy('price', 'asc'); // Sort by lowest price
+        } elseif ($sortBy === 'highestprice') {
+            $query->orderBy('price', 'desc'); // Sort by highest price
+        } elseif ($sortBy === 'recent') {
+            $query->orderBy('created_at', 'desc'); // Sort by most recent
+        }
 
         $properties = $query->get();
 
