@@ -89,7 +89,9 @@ class ProjectController extends Controller
         $project = Project::findOrFail($id);
 
         if (isset($project->properties) && count($project->properties) > 0) {
-            $propertyIds = $project->properties;
+            $propertyIds = is_array($project->properties)
+                ? collect($project->properties)->pluck('id')->toArray()
+                : json_decode($project->properties, true);
 
             $properties = Property::with(['images', 'location']) // Load location data
                 ->whereIn('id', $propertyIds)
