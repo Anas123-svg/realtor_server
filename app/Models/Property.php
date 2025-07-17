@@ -43,7 +43,8 @@ class Property extends Model
         'propertyStatus',
         'adminId',
         'neighborhood',
-        'reference_no'
+        'reference_no',
+        'parkingSpace'
     ];
 
     protected $casts = [

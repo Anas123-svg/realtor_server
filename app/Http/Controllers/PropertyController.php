@@ -26,6 +26,7 @@ class PropertyController extends Controller
             "bathrooms" => $property['bathrooms'],
             "area" => $property['area'],
             "leaseTerm" => $property['leaseTerm'],
+            'parkingSpace' => $property['parkingSpace'],
             "propertyType" => $property['propertyType'],
             "propertyStatus" => $property['propertyStatus'],
             "category" => $property['category'],
@@ -85,6 +86,8 @@ class PropertyController extends Controller
             'images' => $project->images,
             'videos' => $project->videos,
             'address' => $project->address,
+            'housingType' => $project->housingType,
+            'projectStatus' => $project->projectStatus,
             'longitude' => $project->longitude,
             'latitude' => $project->latitude,
             'region' => $project->region,
@@ -93,6 +96,11 @@ class PropertyController extends Controller
             'communityFeatures' => $project->communityFeatures,
             'sustainabilityFeatures' => $project->sustainabilityFeatures,
             'investmentReason' => $project->investmentReason,
+            'waterHeater' => $project->waterHeater,
+            'coolingSystem' => $project->coolingSystem,
+            'internet' => $project->internet,
+            'powerBackup' => $project->powerBackup,
+            'nearbyInfrastructure' => $project->nearbyInfrastructure,
             'amenities' => $project->amenities,
             'progress' => $project->progress,
             'investmentPotential' => $project->investmentPotential,
@@ -131,7 +139,8 @@ class PropertyController extends Controller
             'location.region' => 'nullable|string|max:255',
             'propertyStatus' => 'nullable|string|max:255',
             'neighborhood' => 'nullable|string|max:255',
-            'video' => 'nullable|string'
+            'video' => 'nullable|string',
+            'parkingSpace' => 'nullable|integer|min:0',
 
         ]);
 
@@ -203,6 +212,7 @@ class PropertyController extends Controller
             'propertyType' => 'nullable|string|max:255',
             'category' => 'nullable|string|max:255',
             'dealType' => 'nullable|string|max:255',
+            'parkingSpace' => 'nullable|integer|min:0',
             'price' => 'nullable|numeric|min:0',
             'images' => 'nullable|array',
             'images.*' => 'string',
