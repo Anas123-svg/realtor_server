@@ -31,6 +31,13 @@ public function index()
             'amenities' => $project->amenities,
             'progress' => $project->progress,
             'investmentPotential' => $project->investmentPotential,
+            'housingType' => $project->housingType,
+            'projectStatus' => $project->projectStatus,
+            'waterHeater' => $project->waterHeater,
+            'coolingSystem' => $project->coolingSystem,
+            'internet' => $project->internet,
+            'powerBackup' => $project->powerBackup,
+            'nearbyInfrastructure' => $project->nearbyInfrastructure,
             'FAQ' => $project->FAQ,
             'delivery_time' => $project->delivery_time,
         ];
@@ -63,7 +70,14 @@ public function index()
             'delivery_time' => 'nullable|string',
             'investmentPotential' => 'required|string',
             'FAQ' => 'nullable|array',
-            'properties' => 'nullable|array'
+            'properties' => 'nullable|array',
+            'housingType' => 'nullable|string',
+            'projectStatus' => 'nullable|string',
+            'waterHeater' => 'nullable|string',
+            'coolingSystem' => 'nullable|string',
+            'internet' => 'nullable|string',
+            'powerBackup' => 'nullable|string',
+            'nearbyInfrastructure' => 'nullable|array',
         ]);
 
         $project = Project::create($data);

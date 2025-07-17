@@ -14,7 +14,7 @@ class Project extends Model
         'address', 'longitude', 'latitude', 'region', 'developerInformation',
         'neighborhood', 'communityFeatures', 'sustainabilityFeatures',
         'investmentReason', 'amenities', 'progress', 'investmentPotential', 'FAQ','properties',
-        'delivery_time'
+        'delivery_time', 'housingType', 'projectStatus', 'waterHeater','coolingSystem','internet','powerBackup','nearbyInfrastructure'
     ];
 
     protected $casts = [
@@ -26,6 +26,7 @@ class Project extends Model
         'investmentReason' => 'array',
         'amenities' => 'array',
         'FAQ' => 'array',
-        'properties' => 'array'
+        'properties' => 'array',
+        'nearbyInfrastructure' => 'array',
     ];
 }
