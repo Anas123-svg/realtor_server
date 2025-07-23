@@ -34,9 +34,11 @@ class PropertyController extends Controller
             "floors" => $property['floors'],
             "noiseLevel" => $property['noiseLevel'],
             "laundry" => $property['laundry'],
+            "administrationFee" => $property['administrationFee'],
             "internet" => $property['internet'],
             "condition" => $property['condition'],
             "video" => $property['video'],
+            'dateBuilt' => $property['dateBuilt'],
             'neighborhood' => $property->neighborhood,
             "price" => round((float) $property['price'], 2),
             "view" => is_array($property['view']) ? $property['view'] : [$property['view']],
@@ -141,6 +143,8 @@ class PropertyController extends Controller
             'neighborhood' => 'nullable|string|max:255',
             'video' => 'nullable|string',
             'parkingSpace' => 'nullable|integer|min:0',
+            'administrationFee' => 'nullable|numeric|min:0',
+            'dateBuilt' => 'nullable|string',
 
         ]);
 
@@ -220,6 +224,9 @@ class PropertyController extends Controller
             'location.longitude' => 'nullable|numeric',
             'location.latitude' => 'nullable|numeric',
             'location.region' => 'nullable|string|max:255',
+            'administrationFee' => 'nullable|numeric|min:0',
+            'dateBuilt' => 'nullable|string',
+
         ]);
 
         if ($validator->fails()) {

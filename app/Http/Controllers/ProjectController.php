@@ -114,10 +114,12 @@ class ProjectController extends Controller
             $maxFloors = $properties->max('floors');
             $floorRange = "$minFloors - $maxFloors";
 
-            $minParking = $properties->min('parkingSpaces');
-            $maxParking = $properties->max('parkingSpaces');
+            $minParking = $properties->min('parkingSpace');
+            $maxParking = $properties->max('parkingSpace');
             $parkingRange = "$minParking - $maxParking";
-
+            $minAdminFee = $properties->min('administrationFee');
+            $maxAdminFee = $properties->max('administrationFee');
+            $adminFeeRange = "$minAdminFee - $maxAdminFee";
 
             $properties = $properties->map(function ($property) {
                 return [
@@ -128,11 +130,13 @@ class ProjectController extends Controller
                     'bathrooms' => $property->bathrooms,
                     "reference_no" => $property->reference_no,
                     'area' => $property->area,
+                    'administrationFee' => $property->administrationFee,
                     'propertyType' => $property->propertyType,
                     'category' => $property->category,
                     'dealType' => $property->dealType,
                     'leaseTerm' => $property->leaseTerm,
                     'parkingSpace' => $property->parkingSpace,
+                    'dateBuilt' => $property->dateBuilt,
                     'floors' => $property->floors,
                     'noiseLevel' => $property->noiseLevel,
                     'laundry' => $property->laundry,
@@ -168,7 +172,7 @@ class ProjectController extends Controller
             $project->bathroomRange = $bathroomRange;
             $project->floorRange = $floorRange;
             $project->parkingRange = $parkingRange;
-
+            $project->adminFeeRange = $adminFeeRange;
 
             return response()->json([
                 'project' => $project,
@@ -286,6 +290,7 @@ class ProjectController extends Controller
             'noiseLevel' => $property->noiseLevel,
             'laundry' => $property->laundry,
             'parkingSpace' => $property->parkingSpace,
+            'dateBuilt' => $property->dateBuilt,
             'internet' => $property->internet,
             'condition' => $property->condition,
             'video' => $property->video,
@@ -301,6 +306,7 @@ class ProjectController extends Controller
             'amenities' => $property->amenities,
             'heating' => $property->heating,
             'cooling' => $property->cooling,
+            'administrationFee' => $property->administrationFee,
             'powerBackup' => $property->powerBackup,
             'nearbyInfrastructure' => $property->nearbyInfrastructure,
             'images' => $property->images->map(fn($image) => $image['image'])->toArray(),
