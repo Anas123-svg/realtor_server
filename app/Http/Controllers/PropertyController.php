@@ -111,16 +111,21 @@ class PropertyController extends Controller
         ];
     }
 
-    public function index()
-    {
-        $properties = Property::with(['images', 'location'])->get();
+public function index()
+{
+    $properties = Property::with(['images', 'location', 'admin'])->get();
 
-        $properties = $properties->map(function ($property) {
-            return $this->transformPropertyResponse($property);
-        });
+    $properties = $properties->sortBy(function ($property) {
+        return strtolower($property->title);
+    });
 
-        return response()->json($properties);
-    }
+    $properties = $properties->map(function ($property) {
+        return $this->transformPropertyResponse($property);
+    })->values(); 
+
+    return response()->json($properties);
+}
+
 
     public function store(Request $request)
     {
