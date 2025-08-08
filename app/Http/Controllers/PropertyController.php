@@ -324,10 +324,8 @@ class PropertyController extends Controller
 
         //propertyType filter
         if ($request->has('propertyType')) {
-                        \Log::info('Raw propertyType param:', [$request->query('propertyType')]);
 
             $propertyTypes = json_decode($request->query('propertyType'), true);
-            \Log::info('Decoded propertyType param:', [$propertyTypes]);
 
             if (!is_array($propertyTypes)) {
                 $propertyTypes = [$request->query('propertyType')];
@@ -379,17 +377,14 @@ class PropertyController extends Controller
 
         if ($request->has('beds')) {
             $bedsFilter = json_decode($request->query('beds'), true);
-            \Log::info('Beds Filter Input:', ['beds' => $bedsFilter]);
 
             if (is_array($bedsFilter) && count($bedsFilter) > 0) {
                 $query->where(function ($subQuery) use ($bedsFilter) {
                     foreach ($bedsFilter as $bed) {
                         if (str_ends_with($bed, '+')) {
                             $bedCount = (int) rtrim($bed, '+');
-                            \Log::info('Beds Filter Greater Than or Equal:', ['bedCount' => $bedCount]);
                             $subQuery->orWhere('bedrooms', '>=', $bedCount);
                         } elseif (is_numeric($bed)) {
-                            \Log::info('Beds Filter Exact Match:', ['bedCount' => $bed]);
                             $subQuery->orWhere('bedrooms', '=', (int) $bed);
                         }
                     }
@@ -422,17 +417,14 @@ class PropertyController extends Controller
 
         if ($request->has('baths')) {
             $bathsFilter = json_decode($request->query('baths'), true);
-            \Log::info('baths Filter Input:', ['baths' => $bathsFilter]);
 
             if (is_array($bathsFilter) && count($bathsFilter) > 0) {
                 $query->where(function ($subQuery) use ($bathsFilter) {
                     foreach ($bathsFilter as $bath) {
                         if (str_ends_with($bath, '+')) {
                             $bathCount = (int) rtrim($bath, '+');
-                            \Log::info('baths Filter Greater Than or Equal:', ['bathCount' => $bathCount]);
                             $subQuery->orWhere('bathrooms', '>=', $bathCount);
                         } elseif (is_numeric($bath)) {
-                            \Log::info('baths Filter Exact Match:', ['bathCount' => $bath]);
                             $subQuery->orWhere('bathrooms', '=', (int) $bath);
                         }
                     }
@@ -441,41 +433,35 @@ class PropertyController extends Controller
         }
 
         //parking filter
-if ($request->has('parking')) { 
-    $parkingFilter = json_decode($request->query('parking'), true);
-    \Log::info('Parking Filter Input:', ['parking' => $parkingFilter]);
+        if ($request->has('parking')) {
+            $parkingFilter = json_decode($request->query('parking'), true);
 
-    if (is_array($parkingFilter) && count($parkingFilter) > 0) {
-        $query->where(function ($subQuery) use ($parkingFilter) {
-            foreach ($parkingFilter as $parking) {
-                if (str_ends_with($parking, '+')) {
-                    $parkingCount = (int) rtrim($parking, '+');
-                    \Log::info('Parking Filter Greater Than or Equal:', ['parkingCount' => $parkingCount]);
-                    $subQuery->orWhere('parkingSpace', '>=', $parkingCount); // fixed column name
-                } elseif (is_numeric($parking)) {
-                    \Log::info('Parking Filter Exact Match:', ['parkingCount' => $parking]);
-                    $subQuery->orWhere('parkingSpace', '=', (int) $parking); // fixed column name
-                }
+            if (is_array($parkingFilter) && count($parkingFilter) > 0) {
+                $query->where(function ($subQuery) use ($parkingFilter) {
+                    foreach ($parkingFilter as $parking) {
+                        if (str_ends_with($parking, '+')) {
+                            $parkingCount = (int) rtrim($parking, '+');
+                            $subQuery->orWhere('parkingSpace', '>=', $parkingCount); // fixed column name
+                        } elseif (is_numeric($parking)) {
+                            $subQuery->orWhere('parkingSpace', '=', (int) $parking); // fixed column name
+                        }
+                    }
+                });
             }
-        });
-    }
-}
+        }
 
 
         //bathrooms filter
         if ($request->has('baths')) {
             $bathsFilter = json_decode($request->query('baths'), true);
-            \Log::info('baths Filter Input:', ['baths' => $bathsFilter]);
 
             if (is_array($bathsFilter) && count($bathsFilter) > 0) {
-                $query->where(function ($subQuery) use ($bathsFilter) { 
+                $query->where(function ($subQuery) use ($bathsFilter) {
                     foreach ($bathsFilter as $bath) {
                         if (str_ends_with($bath, '+')) {
                             $bathCount = (int) rtrim($bath, '+');
-                            \Log::info('baths Filter Greater Than or Equal:', ['bathCount' => $bathCount]);
                             $subQuery->orWhere('bathrooms', '>=', $bathCount);
                         } elseif (is_numeric($bath)) {
-                            \Log::info('baths Filter Exact Match:', ['bathCount' => $bath]);
                             $subQuery->orWhere('bathrooms', '=', (int) $bath);
                         }
                     }
@@ -500,17 +486,14 @@ if ($request->has('parking')) {
 
         if ($request->has('floors')) {
             $floorsFilter = json_decode($request->query('floors'), true);
-            \Log::info('floors Filter Input:', ['floors' => $floorsFilter]);
 
             if (is_array($floorsFilter) && count($floorsFilter) > 0) {
                 $query->where(function ($subQuery) use ($floorsFilter) {
                     foreach ($floorsFilter as $floor) {
                         if (str_ends_with($floor, '+')) {
                             $floorCount = (int) rtrim($floor, '+');
-                            \Log::info('floors Filter Greater Than or Equal:', ['floorCount' => $floorCount]);
                             $subQuery->orWhere('floors', '>=', $floorCount);
                         } elseif (is_numeric($floor)) {
-                            \Log::info('floors Filter Exact Match:', ['floorCount' => $floor]);
                             $subQuery->orWhere('floors', '=', (int) $floor);
                         }
                     }
@@ -581,14 +564,16 @@ if ($request->has('parking')) {
 
         $minPrice = $request->query('minPrice', 0);
         $maxPrice = $request->query('maxPrice', PHP_INT_MAX);
-        \Log::info('Price Filter Input:', ['minPrice' => $minPrice, 'maxPrice' => $maxPrice]);
+        $minAdminPrice = $request->query('aminprice', 0);
+        $maxAdminPrice = $request->query('amaxprice', PHP_INT_MAX);
+        $query->whereBetween('administrationFee', [(float) $minAdminPrice, (float) $maxAdminPrice]);
+
         $query->whereBetween('price', [(float) $minPrice, (float) $maxPrice]);
 
         $fields = $request->query('fields', '*');
         $fieldsArray = $fields === '*' ? ['*'] : explode(',', $fields);
         $query->select($fieldsArray);
 
-        \Log::info('Constructed Query:', [$query->toSql(), $query->getBindings()]);
         $sortBy = $request->query('sortBy');
         if ($sortBy === 'lowestprice') {
             $query->orderBy('price', 'asc'); // Sort by lowest price
