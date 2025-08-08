@@ -111,20 +111,20 @@ class PropertyController extends Controller
         ];
     }
 
-public function index()
-{
-    $properties = Property::with(['images', 'location', 'admin'])->get();
+    public function index()
+    {
+        $properties = Property::with(['images', 'location', 'admin'])->get();
 
-    $properties = $properties->sortBy(function ($property) {
-        return strtolower($property->title);
-    });
+        $properties = $properties->sortBy(function ($property) {
+            return strtolower($property->title);
+        });
 
-    $properties = $properties->map(function ($property) {
-        return $this->transformPropertyResponse($property);
-    })->values(); 
+        $properties = $properties->map(function ($property) {
+            return $this->transformPropertyResponse($property);
+        })->values();
 
-    return response()->json($properties);
-}
+        return response()->json($properties);
+    }
 
 
     public function store(Request $request)
@@ -324,12 +324,24 @@ public function index()
 
         //propertyType filter
         if ($request->has('propertyType')) {
-            $propertyType = $request->query('propertyType');
+                        \Log::info('Raw propertyType param:', [$request->query('propertyType')]);
 
-            if (!empty($propertyType)) {
-                $query->where('propertyType', '=', $propertyType);
+            $propertyTypes = json_decode($request->query('propertyType'), true);
+            \Log::info('Decoded propertyType param:', [$propertyTypes]);
+
+            if (!is_array($propertyTypes)) {
+                $propertyTypes = [$request->query('propertyType')];
+            }
+
+            if (count($propertyTypes) > 0) {
+                $query->where(function ($subQuery) use ($propertyTypes) {
+                    foreach ($propertyTypes as $type) {
+                        $subQuery->orWhere('propertyType', '=', $type);
+                    }
+                });
             }
         }
+
         //dealType filter
         if ($request->has('dealType')) {
             $dealType = $request->query('dealType');
@@ -414,6 +426,49 @@ public function index()
 
             if (is_array($bathsFilter) && count($bathsFilter) > 0) {
                 $query->where(function ($subQuery) use ($bathsFilter) {
+                    foreach ($bathsFilter as $bath) {
+                        if (str_ends_with($bath, '+')) {
+                            $bathCount = (int) rtrim($bath, '+');
+                            \Log::info('baths Filter Greater Than or Equal:', ['bathCount' => $bathCount]);
+                            $subQuery->orWhere('bathrooms', '>=', $bathCount);
+                        } elseif (is_numeric($bath)) {
+                            \Log::info('baths Filter Exact Match:', ['bathCount' => $bath]);
+                            $subQuery->orWhere('bathrooms', '=', (int) $bath);
+                        }
+                    }
+                });
+            }
+        }
+
+        //parking filter
+if ($request->has('parking')) { 
+    $parkingFilter = json_decode($request->query('parking'), true);
+    \Log::info('Parking Filter Input:', ['parking' => $parkingFilter]);
+
+    if (is_array($parkingFilter) && count($parkingFilter) > 0) {
+        $query->where(function ($subQuery) use ($parkingFilter) {
+            foreach ($parkingFilter as $parking) {
+                if (str_ends_with($parking, '+')) {
+                    $parkingCount = (int) rtrim($parking, '+');
+                    \Log::info('Parking Filter Greater Than or Equal:', ['parkingCount' => $parkingCount]);
+                    $subQuery->orWhere('parkingSpace', '>=', $parkingCount); // fixed column name
+                } elseif (is_numeric($parking)) {
+                    \Log::info('Parking Filter Exact Match:', ['parkingCount' => $parking]);
+                    $subQuery->orWhere('parkingSpace', '=', (int) $parking); // fixed column name
+                }
+            }
+        });
+    }
+}
+
+
+        //bathrooms filter
+        if ($request->has('baths')) {
+            $bathsFilter = json_decode($request->query('baths'), true);
+            \Log::info('baths Filter Input:', ['baths' => $bathsFilter]);
+
+            if (is_array($bathsFilter) && count($bathsFilter) > 0) {
+                $query->where(function ($subQuery) use ($bathsFilter) { 
                     foreach ($bathsFilter as $bath) {
                         if (str_ends_with($bath, '+')) {
                             $bathCount = (int) rtrim($bath, '+');
