@@ -8,11 +8,12 @@ use App\Http\Controllers\SiteViewrController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\HeroSectionFeaturedPropertyController;
-
+use App\Http\Controllers\AllProperties;
 
 
 Route::get('/properties', [PropertyController::class, 'index']);
 Route::post('/properties', [PropertyController::class, 'store']);
+Route::get('/properties/all', [AllProperties::class, 'search']);
 
 Route::post('/contact/send-email', [ContactController::class, 'sendAgentEmail']);
 Route::post('/contact-us', [ContactController::class, 'sendContactEmail']);

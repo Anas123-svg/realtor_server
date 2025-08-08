@@ -341,21 +341,27 @@ class PropertyController extends Controller
         }
 
         //dealType filter
-        if ($request->has('dealType')) {
-            $dealType = $request->query('dealType');
+if ($request->has('dealType')) {
+    $dealType = $request->query('dealType');
 
-            if (!empty($dealType)) {
-                if ($dealType === 'Rental') {
-                    $query->where(function ($subQuery) {
-                        $subQuery->where('dealType', 'Rental')
-                            ->orWhere('dealType', 'Residential Rental')
-                            ->orWhere('dealType', 'Tourist Rental');
-                    });
-                } else {
-                    $query->where('dealType', '=', $dealType);
-                }
-            }
+    if (!empty($dealType)) {
+        if (strtolower($dealType) === 'new') {
+            // Get all property IDs from projects table
+            $projectPropertyIds = Project::pluck('properties')->flatten()->filter()->toArray();
+            $query->whereIn('id', $projectPropertyIds);
+
+        } elseif (strtolower($dealType) === 'rental') {
+            $query->whereIn('dealType', ['rental', 'residential rental', 'tourist rental']);
+
+        } elseif (strtolower($dealType) === 'sales') {
+            $query->where('dealType', 'sales');
+
+        } else {
+            $query->where('dealType', '=', $dealType);
         }
+    }
+}
+
 
         //propertyStatus filter
         if ($request->has('propertyStatus')) {
@@ -373,6 +379,7 @@ class PropertyController extends Controller
                 $query->where('condition', '=', $condition);
             }
         }
+        //protpe
         //beds filter
 
         if ($request->has('beds')) {
