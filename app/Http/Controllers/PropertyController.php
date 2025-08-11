@@ -278,17 +278,31 @@ class PropertyController extends Controller
         $longitude = $request->query('longitude');
         $radiusInMiles = $request->query('radius', 10);
         $radiusInMeters = $radiusInMiles * 1609.34;
+        if ($request->has('locations')) {
+            $locations = json_decode($request->query('locations'), true);
+            $radiusInMiles = $request->query('radius', 10);
+            $radiusInMeters = $radiusInMiles * 1609.34;
 
-        if (!empty($latitude) && !empty($longitude)) {
-            // Apply a proximity-based filter using ST_Distance_Sphere if latitude and longitude are provided
-            $query->whereHas('location', function ($subQuery) use ($latitude, $longitude, $radiusInMeters) {
-                $subQuery->whereRaw("
-                    ST_Distance_Sphere(
-                        point(longitude, latitude),
-                        point(?, ?)
-                    ) <= ?", [$longitude, $latitude, $radiusInMeters]);
-            });
+            if (is_array($locations) && count($locations) > 0) {
+                $query->whereHas('location', function ($subQuery) use ($locations, $radiusInMeters) {
+                    $subQuery->where(function ($locQuery) use ($locations, $radiusInMeters) {
+                        foreach ($locations as $loc) {
+                            if (isset($loc['latitude'], $loc['longitude'])) {
+                                $latitude = $loc['latitude'];
+                                $longitude = $loc['longitude'];
+                                $locQuery->orWhereRaw("
+                            ST_Distance_Sphere(
+                                point(longitude, latitude),
+                                point(?, ?)
+                            ) <= ?
+                        ", [$longitude, $latitude, $radiusInMeters]);
+                            }
+                        }
+                    });
+                });
+            }
         }
+
 
 
         $filters = [
@@ -341,26 +355,26 @@ class PropertyController extends Controller
         }
 
         //dealType filter
-if ($request->has('dealType')) {
-    $dealType = $request->query('dealType');
+        if ($request->has('dealType')) {
+            $dealType = $request->query('dealType');
 
-    if (!empty($dealType)) {
-        if (strtolower($dealType) === 'new') {
-            // Get all property IDs from projects table
-            $projectPropertyIds = Project::pluck('properties')->flatten()->filter()->toArray();
-            $query->whereIn('id', $projectPropertyIds);
+            if (!empty($dealType)) {
+                if (strtolower($dealType) === 'new') {
+                    // Get all property IDs from projects table
+                    $projectPropertyIds = Project::pluck('properties')->flatten()->filter()->toArray();
+                    $query->whereIn('id', $projectPropertyIds);
 
-        } elseif (strtolower($dealType) === 'rental') {
-            $query->whereIn('dealType', ['rental', 'residential rental', 'tourist rental']);
+                } elseif (strtolower($dealType) === 'rental') {
+                    $query->whereIn('dealType', ['rental', 'residential rental', 'tourist rental']);
 
-        } elseif (strtolower($dealType) === 'sales') {
-            $query->where('dealType', 'sales');
+                } elseif (strtolower($dealType) === 'sales') {
+                    $query->where('dealType', 'sales');
 
-        } else {
-            $query->where('dealType', '=', $dealType);
+                } else {
+                    $query->where('dealType', '=', $dealType);
+                }
+            }
         }
-    }
-}
 
 
         //propertyStatus filter
@@ -505,6 +519,18 @@ if ($request->has('dealType')) {
                         }
                     }
                 });
+            }
+        }
+        //areSize filter 
+        if ($request->filled('areaSize')) {
+            $areaSize = $request->query('areaSize');
+
+            if (is_numeric($areaSize)) {
+                $areaValue = (int) $areaSize;
+                $minNearbyArea = max(0, $areaValue - 10);  // prevent negative lower bound
+                $maxNearbyArea = $areaValue + 10;
+
+                $query->whereBetween('area', [$minNearbyArea, $maxNearbyArea]);
             }
         }
 

@@ -88,7 +88,29 @@ class AllProperties extends Controller
         $region = $request->query('region');
 
         $propertiesQuery = Property::with(['images', 'location', 'admin']);
-
+        //location
+        // Add locations radius filter if provided
+        if ($request->has('locations')) {
+            $locations = json_decode($request->query('locations'), true);
+            if (is_array($locations) && count($locations) > 0) {
+                $propertiesQuery->whereHas('location', function ($subQuery) use ($locations, $radiusInMeters) {
+                    $subQuery->where(function ($locQuery) use ($locations, $radiusInMeters) {
+                        foreach ($locations as $loc) {
+                            if (isset($loc['latitude'], $loc['longitude'])) {
+                                $latitude = $loc['latitude'];
+                                $longitude = $loc['longitude'];
+                                $locQuery->orWhereRaw("
+                                ST_Distance_Sphere(
+                                    point(longitude, latitude),
+                                    point(?, ?)
+                                ) <= ?
+                            ", [$longitude, $latitude, $radiusInMeters]);
+                            }
+                        }
+                    });
+                });
+            }
+        }
         // Deal type handling
         if (strtolower($dealType) === 'new') {
             $projectPropertyIds = Project::pluck('properties')->flatten()->filter()->toArray();
@@ -138,18 +160,15 @@ class AllProperties extends Controller
 
 
         // Area size filter
-        if ($request->filled('areaSize')) {
-            $areaValue = $request->query('areaSize');
+if ($request->filled('areaSize') && is_numeric($areaSize)) {
+    $areaValue = (int) $areaSize;
+    $minNearbyArea = max(0, $areaValue - 10);  // avoid negative area
+    $maxNearbyArea = $areaValue + 10;
 
-            $propertiesQuery->where(function ($subQuery) use ($areaValue) {
-                if (str_ends_with($areaValue, '+')) {
-                    $areaCount = (int) rtrim($areaValue, '+');
-                    $subQuery->where('area', '>=', $areaCount);
-                } elseif (is_numeric($areaValue)) {
-                    $subQuery->where('area', '=', (int) $areaValue);
-                }
-            });
-        }
+    // Filter properties where area is between [areaValue-10, areaValue+10]
+    $propertiesQuery->whereBetween('area', [$minNearbyArea, $maxNearbyArea]);
+}
+
         //property type
         if ($request->has('propertyType')) {
             $propertyTypes = json_decode($request->query('propertyType'), true);
@@ -163,26 +182,6 @@ class AllProperties extends Controller
                     }
                 });
             }
-        }
-
-
-
-        // Region filter
-        if ($region) {
-            $propertiesQuery->whereHas('location', function ($subQuery) use ($region) {
-                $subQuery->where('region', $region);
-            });
-        }
-
-        // Location radius filter
-        if (!empty($latitude) && !empty($longitude)) {
-            $propertiesQuery->whereHas('location', function ($subQuery) use ($latitude, $longitude, $radiusInMeters) {
-                $subQuery->whereRaw("
-                ST_Distance_Sphere(
-                    point(longitude, latitude),
-                    point(?, ?)
-                ) <= ?", [$longitude, $latitude, $radiusInMeters]);
-            });
         }
 
         // Get results
