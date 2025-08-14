@@ -160,14 +160,14 @@ class AllProperties extends Controller
 
 
         // Area size filter
-if ($request->filled('areaSize') && is_numeric($areaSize)) {
-    $areaValue = (int) $areaSize;
-    $minNearbyArea = max(0, $areaValue - 10);  // avoid negative area
-    $maxNearbyArea = $areaValue + 10;
+        if ($request->filled('areaSize') && is_numeric($areaSize)) {
+            $areaValue = (int) $areaSize;
+            $minNearbyArea = max(0, $areaValue - 10);  // avoid negative area
+            $maxNearbyArea = $areaValue + 10;
 
-    // Filter properties where area is between [areaValue-10, areaValue+10]
-    $propertiesQuery->whereBetween('area', [$minNearbyArea, $maxNearbyArea]);
-}
+            // Filter properties where area is between [areaValue-10, areaValue+10]
+            $propertiesQuery->whereBetween('area', [$minNearbyArea, $maxNearbyArea]);
+        }
 
         //property type
         if ($request->has('propertyType')) {
@@ -192,6 +192,89 @@ if ($request->filled('areaSize') && is_numeric($areaSize)) {
 
         return response()->json($properties);
     }
+
+public function search2(Request $request) 
+{
+    $dealType = $request->input('dealType');
+
+    $frontendBaseUrl = 'http://localhost:3000/properties';
+
+    $propertyType = $request->input('propertyType');
+    if ($propertyType) {
+        $propertyType = json_decode($propertyType, true); // decode string to array
+    }
+
+    $locations = $request->input('locations');
+    if ($locations) {
+        $locations = json_decode($locations, true); // decode string to array
+    }
+
+    $minPrice = $request->input('minPrice');
+    $maxPrice = $request->input('maxPrice');
+    $beds = $request->input('beds');
+    $baths = $request->input('baths');
+    $areaSize = $request->input('areaSize');
+
+    // Base URLs depending on dealType
+    $url = $frontendBaseUrl;
+    switch ($dealType) {
+        case 'Sale':
+            $url .= '?condition=Used&dealType=Sale';
+            break;
+        case 'Tourist Rental':
+            $url .= '?dealType=Tourist%20Rental';
+            break;
+        case 'Residential Rental':
+            $url .= '?dealType=Residential%20Rental';
+            break;
+        case 'New':
+            $url .= '?dealType=New';
+            break;
+        default:
+            $url .= '?condition=Used&dealType=Sale';
+            break;
+    }
+
+    $queryParams = [];
+
+    // Encode propertyType array
+    if (!empty($propertyType)) {
+        $encodedTypes = array_map(fn($type) => str_replace(' ', '+', $type), $propertyType);
+        $queryParams['propertyType'] = json_encode($encodedTypes);
+    }
+
+    // Encode locations array
+    if (!empty($locations)) {
+        $encodedLocations = array_map(function($loc) {
+            if (isset($loc['label'])) {
+                $loc['label'] = str_replace(' ', '+', $loc['label']);
+            }
+            if (isset($loc['region'])) {
+                $loc['region'] = str_replace(' ', '+', $loc['region']);
+            }
+            return $loc;
+        }, $locations);
+
+        $queryParams['locations'] = json_encode($encodedLocations);
+    }
+
+    // Plain minPrice and maxPrice
+    if ($minPrice) $queryParams['minPrice'] = $minPrice;
+    if ($maxPrice) $queryParams['maxPrice'] = $maxPrice;
+
+    // Encode beds and baths as JSON arrays
+    if ($beds) $queryParams['beds'] = json_encode([$beds]);
+    if ($baths) $queryParams['baths'] = json_encode([$baths]);
+
+    if ($areaSize) $queryParams['areaSize'] = $areaSize;
+
+    if (!empty($queryParams)) {
+        $url .= '&' . http_build_query($queryParams);
+    }
+
+    return $url;
+}
+
 
 
 
