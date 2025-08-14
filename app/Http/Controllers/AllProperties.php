@@ -221,10 +221,10 @@ public function search2(Request $request)
         case 'Sale':
             $url .= '?condition=Used&dealType=Sale';
             break;
-        case 'Tourist Rental':
+        case 'TouristRental':
             $url .= '?dealType=Tourist%20Rental';
             break;
-        case 'Residential Rental':
+        case 'ResidentialRental':
             $url .= '?dealType=Residential%20Rental';
             break;
         case 'New':
