@@ -615,9 +615,12 @@ if ($request->has('dealType')) {
 
         $minPrice = $request->query('minPrice', 0);
         $maxPrice = $request->query('maxPrice', PHP_INT_MAX);
+        $minArea = $request->query('minArea', 0);
+        $maxArea = $request->query('maxArea', PHP_INT_MAX);
         $minAdminPrice = $request->query('aminprice', 0);
         $maxAdminPrice = $request->query('amaxprice', PHP_INT_MAX);
         $query->whereBetween('administrationFee', [(float) $minAdminPrice, (float) $maxAdminPrice]);
+        $query->whereBetween('area', [(float) $minArea, (float) $maxArea]);
 
         $query->whereBetween('price', [(float) $minPrice, (float) $maxPrice]);
 
