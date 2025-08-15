@@ -355,26 +355,49 @@ class PropertyController extends Controller
         }
 
         //dealType filter
-        if ($request->has('dealType')) {
-            $dealType = $request->query('dealType');
+if ($request->has('dealType')) {
+    // Decode URL-encoded strings and normalize
+    $dealType = strtolower(trim(urldecode($request->query('dealType'))));
 
-            if (!empty($dealType)) {
-                if (strtolower($dealType) === 'new') {
-                    // Get all property IDs from projects table
-                    $projectPropertyIds = Project::pluck('properties')->flatten()->filter()->toArray();
-                    $query->whereIn('id', $projectPropertyIds);
+    if (!empty($dealType)) {
+        if ($dealType === 'new') {
+            // All properties inside projects
+            $projectPropertyIds = Project::pluck('properties')
+                ->flatten()
+                ->filter()
+                ->unique()
+                ->values()
+                ->toArray();
 
-                } elseif (strtolower($dealType) === 'rental') {
-                    $query->whereIn('dealType', ['rental', 'residential rental', 'tourist rental']);
-
-                } elseif (strtolower($dealType) === 'sales') {
-                    $query->where('dealType', 'sales');
-
-                } else {
-                    $query->where('dealType', '=', $dealType);
-                }
+            if (!empty($projectPropertyIds)) {
+                $query->whereIn('id', $projectPropertyIds);
+            } else {
+                $query->whereRaw('1 = 0');
             }
+
+        } elseif ($dealType === 'rental') {
+            // Only properties where dealType is 'rental'
+            $query->whereRaw('LOWER(dealType) = ?', ['rental']);
+
+        } elseif ($dealType === 'residential rental') {
+            // Only properties where dealType is 'residential rental'
+            $query->whereRaw('LOWER(dealType) = ?', ['residential rental']);
+
+        } elseif ($dealType === 'tourist rental') {
+            // Only properties where dealType is 'tourist rental'
+            $query->whereRaw('LOWER(dealType) = ?', ['tourist rental']);
+
+        } elseif (in_array($dealType, ['sale', 'sales'])) {
+            // Match both 'sale' and 'sales'
+            $query->whereIn('dealType', ['sale', 'sales']);
+
+        } else {
+            // Fallback: exact case-insensitive match
+            $query->whereRaw('LOWER(dealType) = ?', [$dealType]);
         }
+    }
+}
+
 
 
         //propertyStatus filter
