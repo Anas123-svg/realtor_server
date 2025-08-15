@@ -376,23 +376,18 @@ if ($request->has('dealType')) {
             }
 
         } elseif ($dealType === 'rental') {
-            // Only properties where dealType is 'rental'
             $query->whereRaw('LOWER(dealType) = ?', ['rental']);
 
         } elseif ($dealType === 'residential rental') {
-            // Only properties where dealType is 'residential rental'
             $query->whereRaw('LOWER(dealType) = ?', ['residential rental']);
 
         } elseif ($dealType === 'tourist rental') {
-            // Only properties where dealType is 'tourist rental'
             $query->whereRaw('LOWER(dealType) = ?', ['tourist rental']);
 
         } elseif (in_array($dealType, ['sale', 'sales'])) {
-            // Match both 'sale' and 'sales'
             $query->whereIn('dealType', ['sale', 'sales']);
 
         } else {
-            // Fallback: exact case-insensitive match
             $query->whereRaw('LOWER(dealType) = ?', [$dealType]);
         }
     }
