@@ -197,7 +197,7 @@ public function search2(Request $request)
 {
     $dealType = $request->input('dealType');
 
-    $frontendBaseUrl = 'https://realtor-client-two.vercel.app/properties';
+    $frontendBaseUrl = 'https://realtorcaribe.com/properties';
 
     $propertyType = $request->input('propertyType');
     if ($propertyType) {
