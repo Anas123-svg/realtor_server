@@ -355,43 +355,43 @@ class PropertyController extends Controller
         }
 
         //dealType filter
-if ($request->has('dealType')) {
-    // Decode URL-encoded strings and normalize
-    $dealType = strtolower(trim(urldecode($request->query('dealType'))));
+        if ($request->has('dealType')) {
+            // Decode URL-encoded strings and normalize
+            $dealType = strtolower(trim(urldecode($request->query('dealType'))));
 
-    if (!empty($dealType)) {
-        if ($dealType === 'new') {
-            // All properties inside projects
-            $projectPropertyIds = Project::pluck('properties')
-                ->flatten()
-                ->filter()
-                ->unique()
-                ->values()
-                ->toArray();
+            if (!empty($dealType)) {
+                if ($dealType === 'new') {
+                    // All properties inside projects
+                    $projectPropertyIds = Project::pluck('properties')
+                        ->flatten()
+                        ->filter()
+                        ->unique()
+                        ->values()
+                        ->toArray();
 
-            if (!empty($projectPropertyIds)) {
-                $query->whereIn('id', $projectPropertyIds);
-            } else {
-                $query->whereRaw('1 = 0');
+                    if (!empty($projectPropertyIds)) {
+                        $query->whereIn('id', $projectPropertyIds);
+                    } else {
+                        $query->whereRaw('1 = 0');
+                    }
+
+                } elseif ($dealType === 'rental') {
+                    $query->whereRaw('LOWER(dealType) = ?', ['rental']);
+
+                } elseif ($dealType === 'residential rental') {
+                    $query->whereRaw('LOWER(dealType) = ?', ['residential rental']);
+
+                } elseif ($dealType === 'tourist rental') {
+                    $query->whereRaw('LOWER(dealType) = ?', ['tourist rental']);
+
+                } elseif (in_array($dealType, ['sale', 'sales'])) {
+                    $query->whereIn('dealType', ['sale', 'sales']);
+
+                } else {
+                    $query->whereRaw('LOWER(dealType) = ?', [$dealType]);
+                }
             }
-
-        } elseif ($dealType === 'rental') {
-            $query->whereRaw('LOWER(dealType) = ?', ['rental']);
-
-        } elseif ($dealType === 'residential rental') {
-            $query->whereRaw('LOWER(dealType) = ?', ['residential rental']);
-
-        } elseif ($dealType === 'tourist rental') {
-            $query->whereRaw('LOWER(dealType) = ?', ['tourist rental']);
-
-        } elseif (in_array($dealType, ['sale', 'sales'])) {
-            $query->whereIn('dealType', ['sale', 'sales']);
-
-        } else {
-            $query->whereRaw('LOWER(dealType) = ?', [$dealType]);
         }
-    }
-}
 
 
 
@@ -629,13 +629,19 @@ if ($request->has('dealType')) {
         $query->select($fieldsArray);
 
         $sortBy = $request->query('sortBy');
-        if ($sortBy === 'lowestprice') {
-            $query->orderBy('price', 'asc'); // Sort by lowest price
-        } elseif ($sortBy === 'highestprice') {
-            $query->orderBy('price', 'desc'); // Sort by highest price
+
+        if ($sortBy === 'lowestprice' || $sortBy === 'priceLowToHigh') {
+            $query->orderBy('price', 'asc'); // Low to high price
+        } elseif ($sortBy === 'highestprice' || $sortBy === 'priceHighToLow') {
+            $query->orderBy('price', 'desc'); // High to low price
+        } elseif ($sortBy === 'areaLowToHigh') {
+            $query->orderBy('area', 'asc'); // Low to high area
+        } elseif ($sortBy === 'areaHighToLow') {
+            $query->orderBy('area', 'desc'); // High to low area
         } elseif ($sortBy === 'recent') {
-            $query->orderBy('created_at', 'desc'); // Sort by most recent
+            $query->orderBy('created_at', 'desc'); // Most recent
         }
+
 
         $properties = $query->get();
 
