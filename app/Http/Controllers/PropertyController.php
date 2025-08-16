@@ -280,8 +280,6 @@ class PropertyController extends Controller
         $radiusInMeters = $radiusInMiles * 1609.34;
         if ($request->has('locations')) {
             $locations = json_decode($request->query('locations'), true);
-            $radiusInMiles = $request->query('radius', 10);
-            $radiusInMeters = $radiusInMiles * 1609.34;
 
             if (is_array($locations) && count($locations) > 0) {
                 $query->whereHas('location', function ($subQuery) use ($locations, $radiusInMeters) {
